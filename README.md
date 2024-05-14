@@ -1,2 +1,2 @@
 # rlox
-jlox implementation in rust
+jlox masturbation in rust
