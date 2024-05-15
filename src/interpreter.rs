@@ -230,10 +230,18 @@ impl crate::stmt::Visitor<()> for Interpreter<'_> {
                 else_branch,
             } => {
                 let condition: Object = self.evaluate(condition);
+
                 if let Object::RBoolean(_v @ true) = self.is_truthy(&condition) {
                     self.execute(then_branch);
                 } else if let Some(else_b) = *else_branch.clone() {
                     self.execute(&else_b);
+                }
+            }
+            crate::stmt::Stmt::While { condition, body } => {
+                let mut condition_result: Object = self.evaluate(&condition);
+                while let Object::RBoolean(_v @ true) = self.is_truthy(&condition_result) {
+                    self.execute(body);
+                    condition_result = self.evaluate(&condition);
                 }
             }
         }

@@ -1,6 +1,6 @@
 use crate::{expr::Expr, token::Token};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Stmt<'a> {
     Expression {
         expr: Box<Expr<'a>>,
@@ -19,7 +19,12 @@ pub enum Stmt<'a> {
         condition: Box<Expr<'a>>,
         then_branch: Box<Self>,
         else_branch: Box<Option<Self>>,
+    },
+    While {
+        condition: Box<Expr<'a>>,
+        body: Box<Self>
     }
+
 }
 
 impl Stmt<'_> {

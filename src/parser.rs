@@ -64,12 +64,20 @@ impl Parser {
 
     fn statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt<'a>> {
         if !Parser::is_at_end(tokens, current) {
+            if Parser::match_tokens(tokens, current, vec![TokenType::For]) {
+                return Some(Parser::for_statement(tokens, current));
+            }
+
             if Parser::match_tokens(tokens, current, vec![TokenType::If]) {
                 return Some(Parser::if_statement(tokens, current));
             }
 
             if Parser::match_tokens(tokens, current, vec![TokenType::Print]) {
                 return Some(Parser::print_statement(tokens, current));
+            }
+
+            if Parser::match_tokens(tokens, current, vec![TokenType::While]) {
+                return Some(Parser::while_statement(tokens, current));
             }
 
             if Parser::match_tokens(tokens, current, vec![TokenType::LeftBrace]) {
@@ -84,6 +92,100 @@ impl Parser {
         None
     }
 
+    fn for_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::LeftParen,
+            "Expect '(' after 'for' keyword.",
+        );
+
+        let mut initializer;
+        if Parser::match_tokens(tokens, current, vec![TokenType::Semicolon]) {
+            initializer = None;
+        } else if Parser::match_tokens(tokens, current, vec![TokenType::Var]) {
+            initializer = Parser::var_declaration(tokens, current);
+        } else {
+            initializer = Some(Parser::expression_statement(tokens, current));
+        }
+
+        let mut condition = None;
+        if !Parser::check(tokens, current, TokenType::Semicolon) {
+            condition = Some(Parser::expression(tokens, current));
+        }
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::Semicolon,
+            "Expect ';' after loop condition.",
+        );
+
+        let mut increment = None;
+        if !Parser::check(tokens, current, TokenType::RightParen) {
+            increment = Some(Parser::expression(tokens, current));
+        }
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::RightParen,
+            "Expect ')' after for clauses.",
+        );
+
+        // Construct the While loop
+        let mut body = Parser::statement(tokens, current).unwrap();
+
+
+        if let Some(inc) = increment {
+            body = Stmt::Block {
+                statements: vec![
+                    body.clone(),
+                    Stmt::Expression {
+                        expr: Box::new(inc),
+                    },
+                ],
+            };
+        }
+
+        if let None = condition {
+            condition = Some(Expr::Literal {
+                value: Object::RBoolean(true),
+            })
+        }
+        body = Stmt::While {
+            condition: Box::new(condition.unwrap()),
+            body: Box::new(body.clone()),
+        };
+
+        if let Some(init) = initializer {
+            body = Stmt::Block {
+                statements: vec![init, body.clone()],
+            }
+        }
+
+        body
+    }
+
+    fn while_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::LeftParen,
+            "Expect '(' after while keyword.",
+        );
+        let condition = Parser::expression(tokens, current);
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::RightParen,
+            "Expect ')' after while condition.",
+        );
+        let body: Stmt = Parser::statement(tokens, current).unwrap();
+        Stmt::While {
+            condition: Box::new(condition),
+            body: Box::new(body),
+        }
+    }
+
     fn if_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
         Parser::consume(
             tokens,
@@ -95,7 +197,7 @@ impl Parser {
         Parser::consume(
             tokens,
             current,
-            TokenType::LeftParen,
+            TokenType::RightParen,
             "Expect ')' after 'if' condition.",
         );
 
@@ -148,7 +250,7 @@ impl Parser {
         Parser::consume(
             tokens,
             current,
-            TokenType::Super,
+            TokenType::Semicolon,
             "Expect ';' after expression.",
         );
         Stmt::Expression {
@@ -159,7 +261,6 @@ impl Parser {
     // expression →  equality ;
     fn expression<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
         Parser::assignment(tokens, current)
-        // Parser::equality(tokens, current)
     }
 
     fn assignment<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
@@ -237,7 +338,12 @@ impl Parser {
         while Parser::match_tokens(
             tokens,
             current,
-            vec![TokenType::BangEqual, TokenType::EqualEqual],
+            vec![
+                TokenType::Greater,
+                TokenType::GreaterEqual,
+                TokenType::Less,
+                TokenType::LessEqual,
+            ],
         ) {
             let operator: &Token = Parser::get_previous(tokens, current);
             let right: Expr = Parser::term(tokens, current);

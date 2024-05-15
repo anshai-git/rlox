@@ -1,6 +1,6 @@
 use crate::{object::Object, token::Token};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Expr<'a> {
     Assign {
         name: &'a Token,
