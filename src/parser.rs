@@ -401,8 +401,41 @@ impl Parser {
                 operator,
             }
         } else {
-            Parser::primary(tokens, current)
+            Parser::call(tokens, current)
         }
+    }
+
+    // call ->  primary ( "(" arguments? ")" )* ;
+    fn call<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+        let mut expr: Expr = Parser::primary(tokens, current);
+        loop {
+            if Parser::match_tokens(tokens, current, vec![TokenType::LeftParen]) {
+                expr = Parser::finish_call(tokens, current, expr);
+            } else {
+                break;
+            }
+        }
+        expr
+    }
+
+    fn finish_call<'a>(tokens: &'a Vec<Token>, current: &mut i16, callee: Expr) -> Expr<'a> {
+        let mut arguments: Vec<Expr> = Vec::new();
+        if !Parser::check(tokens, current, TokenType::RightParen) {
+            loop {
+                if arguments.len() >= 255 {
+                    // TODO: Error handling?
+                    panic!("Can't have more than 255 arguments"); 
+                }
+                arguments.push(Parser::expression(tokens, current));
+                if !Parser::match_tokens(tokens, current, vec![TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+    
+        let paren = Parser::consume(tokens, current, TokenType::RightParen, "Expect ')' after arguments");
+
+        Expr::Literal { value: Object::RNull }
     }
 
     // primary →  NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
