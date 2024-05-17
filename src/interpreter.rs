@@ -113,6 +113,7 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
             Expr::Grouping { expr } => self.evaluate(expr),
             Expr::Unary { right, operator } => {
                 let right: Object = self.evaluate(right);
+
                 match operator.token_type {
                     TokenType::Bang => self.is_truthy(&right),
                     TokenType::Minus => {

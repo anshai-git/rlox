@@ -29,11 +29,6 @@ pub enum Expr<'a> {
         right: Box<Self>,
         operator: &'a Token,
     },
-    Call {
-        callee: Box<Self>,
-        paren: &'a Token,
-        arguments: Vec<Self>
-    }
 }
 
 impl Expr<'_> {
