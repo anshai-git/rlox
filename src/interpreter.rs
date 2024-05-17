@@ -1,34 +1,19 @@
 use core::panic;
 
 use crate::{
-    environment::Environment, expr::Expr, lox_callable::LoxCallable, object::Object, stmt::Stmt,
-    token_type::TokenType,
+    environment::Environment, expr::Expr, object::Object, stmt::Stmt, token_type::TokenType,
 };
 
 pub struct Interpreter<'a> {
     pub program: &'a Vec<Stmt<'a>>,
-    pub globals: Box<Environment>,
     pub environment: Box<Environment>,
 }
 
 impl<'a> Interpreter<'a> {
     pub fn new(program: &'a Vec<Stmt>) -> Self {
-        let mut globals: Environment = Environment::new();
-        globals.define(
-            "clock".to_string(),
-            Object::Callable(LoxCallable::LoxFunction {
-                arity: Box::new(|| {
-                    0
-                }),
-                runner: || {
-
-                }
-            }),
-        );
         Interpreter {
             program,
             environment: Box::new(Environment::new()),
-            globals: Box::new(globals),
         }
     }
 
@@ -201,30 +186,6 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
 
                 self.evaluate(right)
             }
-            Expr::Call {
-                callee,
-                paren,
-                arguments,
-            } => {
-                let c_callee = self.evaluate(callee);
-                let mut c_args = Vec::new();
-                for arg in arguments {
-                    c_args.push(self.evaluate(arg));
-                }
-
-                if let Object::Callable(f) = c_callee {
-                    if arguments.len() != f.arity() {
-                        panic!(
-                            "Expected [{}] arguments but got [{}].",
-                            f.arity(),
-                            arguments.len()
-                        );
-                    }
-                    f.run(self, c_args)
-                } else {
-                    panic!("Only functions and classes can be called");
-                }
-            }
         }
     }
 }
@@ -246,9 +207,6 @@ impl crate::stmt::Visitor<()> for Interpreter<'_> {
                     }
                     Object::RString(s) => {
                         println!("{s}");
-                    }
-                    Object::Callable(c) => {
-                        println!("implement function.to_string()");
                     }
                 }
             }

@@ -12,7 +12,6 @@ mod ast_printer;
 mod interpreter;
 mod stmt;
 mod environment;
-mod lox_callable;
 
 use rlox::RLox;
 
