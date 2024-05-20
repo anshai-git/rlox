@@ -1,4 +1,4 @@
-use crate::{environment::Environment, interpreter::Interpreter};
+use crate::interpreter::Interpreter;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
 use crate::stmt::Stmt;

@@ -6,7 +6,7 @@ use crate::{object::Object, token::Token};
 #[derive(Clone, Debug)]
 pub struct Environment {
     pub enclosing: Option<Box<Self>>,
-    values: HashMap<String, Object>,
+    pub values: HashMap<String, Object>,
 }
 
 impl Environment {
@@ -28,16 +28,17 @@ impl Environment {
         self.values.insert(key, value);
     }
 
-    pub fn get(&self, name: &Token) -> &Object {
+    pub fn get(&self, name: &Token) -> Option<&Object> {
         if let Some(v) = self.values.get(&name.lexeme) {
-            return v;
+            return Some(v);
         }
 
         if let Some(enclosing) = &self.enclosing {
             return enclosing.get(name);
         }
 
-        panic!("Undefined variable");
+        None
+        // panic!("Undefined variable");
     }
 
     pub fn assign(&mut self, name: &Token, value: Object) {

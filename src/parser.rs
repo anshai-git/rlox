@@ -27,13 +27,74 @@ impl Parser {
     }
 
     fn declaration<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt<'a>> {
+        if Parser::match_tokens(tokens, current, vec![TokenType::Fun]) {
+            return Parser::function_declaration(tokens, current, "function");
+        }
+
         if Parser::match_tokens(tokens, current, vec![TokenType::Var]) {
             return Parser::var_declaration(tokens, current);
         }
+
         Parser::statement(tokens, current)
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // TODO: synchronization point should be here
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    }
+
+    fn function_declaration<'a>(
+        tokens: &'a Vec<Token>,
+        current: &mut i16,
+        kind: &str,
+    ) -> Option<Stmt<'a>> {
+        let name = Parser::consume(
+            tokens,
+            current,
+            TokenType::Identifier,
+            format!("Expect {} name.", kind).as_str(),
+        );
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::LeftParen,
+            format!("Expect '(' after {} name.", kind).as_str(),
+        );
+        let mut parameters = Vec::new();
+        if !Parser::check(tokens, current, TokenType::RightParen) {
+            loop {
+                if parameters.len() >= 255 {
+                    panic!("Can't have more than 255 parameters.");
+                }
+
+                parameters.push(Parser::consume(
+                    tokens,
+                    current,
+                    TokenType::Identifier,
+                    "Expect parameter name.",
+                ));
+
+                if !Parser::match_tokens(tokens, current, vec![TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::RightParen,
+            "Expect ')' after parameters.",
+        );
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::LeftBrace,
+            format!("Expect '{{' before {} body.", kind).as_str(),
+        );
+        let body = Parser::block(tokens, current);
+        Some(Stmt::Function {
+            name,
+            params: parameters,
+            body,
+        })
     }
 
     fn var_declaration<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt<'a>> {
@@ -82,9 +143,7 @@ impl Parser {
 
             if Parser::match_tokens(tokens, current, vec![TokenType::LeftBrace]) {
                 let statements: Vec<Stmt> = Parser::block(tokens, current);
-                return Some(Stmt::Block {
-                    statements: statements,
-                });
+                return Some(Stmt::Block { statements });
             }
 
             return Some(Parser::expression_statement(tokens, current));
@@ -100,7 +159,7 @@ impl Parser {
             "Expect '(' after 'for' keyword.",
         );
 
-        let mut initializer;
+        let initializer;
         if Parser::match_tokens(tokens, current, vec![TokenType::Semicolon]) {
             initializer = None;
         } else if Parser::match_tokens(tokens, current, vec![TokenType::Var]) {
@@ -133,7 +192,6 @@ impl Parser {
 
         // Construct the While loop
         let mut body = Parser::statement(tokens, current).unwrap();
-
 
         if let Some(inc) = increment {
             body = Stmt::Block {
@@ -401,7 +459,48 @@ impl Parser {
                 operator,
             }
         } else {
-            Parser::primary(tokens, current)
+            Parser::call(tokens, current)
+        }
+    }
+
+    fn call<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+        let mut expr = Parser::primary(tokens, current);
+        loop {
+            if Parser::match_tokens(tokens, current, vec![TokenType::LeftParen]) {
+                expr = Parser::finish_call(tokens, current, expr);
+            } else {
+                break;
+            }
+        }
+        expr
+    }
+
+    fn finish_call<'a>(tokens: &'a Vec<Token>, current: &mut i16, callee: Expr<'a>) -> Expr<'a> {
+        let mut arguments = Vec::new();
+        if !Parser::check(tokens, current, TokenType::RightParen) {
+            loop {
+                if arguments.len() >= 255 {
+                    panic!("Can't have more than 255 arguments");
+                }
+
+                arguments.push(Parser::expression(tokens, current));
+                if !Parser::match_tokens(tokens, current, vec![TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+
+        let paren = Parser::consume(
+            tokens,
+            current,
+            TokenType::RightParen,
+            "Expect ')' after arguments",
+        );
+
+        Expr::Call {
+            callee: Box::new(callee),
+            paren,
+            arguments,
         }
     }
 

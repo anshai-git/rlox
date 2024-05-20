@@ -1,17 +1,22 @@
+#![allow(warnings, dead_code)]
+
 use clap::{command, Arg, ArgMatches, Command};
 
-mod rlox;
-mod scanner;
-mod token;
-mod token_type;
+mod ast_printer;
+mod environment;
+mod expr;
+mod interpreter;
 mod literal; // deprecated, instead: Object
+mod lox_callable;
+mod native_functions;
 mod object;
 mod parser;
-mod expr;
-mod ast_printer;
-mod interpreter;
+mod rlox;
+mod scanner;
 mod stmt;
-mod environment;
+mod token;
+mod token_type;
+mod lox_function;
 
 use rlox::RLox;
 

@@ -13,7 +13,7 @@ pub enum Stmt<'a> {
         initializer: Option<Expr<'a>>,
     },
     Block {
-        statements: Vec<Self>
+        statements: Vec<Self>,
     },
     If {
         condition: Box<Expr<'a>>,
@@ -22,9 +22,13 @@ pub enum Stmt<'a> {
     },
     While {
         condition: Box<Expr<'a>>,
-        body: Box<Self>
-    }
-
+        body: Box<Self>,
+    },
+    Function {
+        name: &'a Token,
+        params: Vec<&'a Token>,
+        body: Vec<Stmt<'a>>,
+    },
 }
 
 impl Stmt<'_> {

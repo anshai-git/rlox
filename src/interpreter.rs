@@ -1,19 +1,33 @@
 use core::panic;
 
 use crate::{
-    environment::Environment, expr::Expr, object::Object, stmt::Stmt, token_type::TokenType,
+    environment::{self, Environment},
+    expr::Expr,
+    lox_callable::{LoxCallable, LoxCallableClone},
+    lox_function::LoxFunction,
+    native_functions::Clock,
+    object::Object,
+    stmt::Stmt,
+    token_type::TokenType,
 };
 
 pub struct Interpreter<'a> {
     pub program: &'a Vec<Stmt<'a>>,
     pub environment: Box<Environment>,
+    pub globals: Box<Environment>,
 }
 
 impl<'a> Interpreter<'a> {
     pub fn new(program: &'a Vec<Stmt>) -> Self {
+        let mut globals = Box::new(Environment::new());
+        globals.define(
+            "clock".to_string(),
+            Object::RCallable(Box::new(Clock::new())),
+        );
         Interpreter {
             program,
             environment: Box::new(Environment::new()),
+            globals,
         }
     }
 
@@ -78,7 +92,7 @@ impl<'a> Interpreter<'a> {
         self.environment = Box::new(new_environment);
     }
 
-    fn execute_block(&mut self, statements: &Vec<Stmt>) {
+    pub fn execute_block(&mut self, statements: &Vec<Stmt>) {
         self.enter_scope();
 
         for statement in statements {
@@ -88,6 +102,22 @@ impl<'a> Interpreter<'a> {
         if let Some(e) = self.environment.enclosing.clone() {
             self.environment = e;
         }
+    }
+
+    pub fn execute_block_2(&mut self, statements: &Vec<Stmt>, env: Environment) {
+        let previous = self.environment.clone();
+
+        self.environment = Box::new(env.clone());
+
+        for statement in statements {
+            self.execute(statement);
+        }
+
+        self.environment = previous;
+
+        // if let Some(e) = self.environment.enclosing.clone() {
+        //     self.environment = e;
+        // }
     }
 }
 
@@ -161,7 +191,17 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
                     _ => panic!("Unexpected token."),
                 }
             }
-            Expr::Variable { name } => return self.environment.get(name).clone(),
+            Expr::Variable { name } => {
+                if let Some(variable) = self.environment.get(name).clone() {
+                    return variable.clone();
+                }
+
+                if let Some(global_variable) = self.globals.get(name).clone() {
+                    return global_variable.clone();
+                }
+
+                panic!("Undefined variable");
+            }
             Expr::Assign { name, value } => {
                 let v: Object = self.evaluate(value);
                 self.environment.assign(name, v.clone());
@@ -175,16 +215,40 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
                 let left_result: Object = self.evaluate(left);
 
                 if let TokenType::Or = operator.token_type {
-                    if let Object::RBoolean(v @ true) = self.is_truthy(&left_result) {
+                    if let Object::RBoolean(_v @ true) = self.is_truthy(&left_result) {
                         return left_result;
                     }
                 } else {
-                    if let Object::RBoolean(v @ false) = self.is_truthy(&left_result) {
+                    if let Object::RBoolean(_v @ false) = self.is_truthy(&left_result) {
                         return left_result;
                     }
                 }
 
                 self.evaluate(right)
+            }
+            Expr::Call {
+                callee, arguments, ..
+            } => {
+                let callee_object: Object = self.evaluate(callee);
+
+                let mut argument_values = Vec::new();
+                for arg in arguments {
+                    argument_values.push(self.evaluate(arg));
+                }
+
+                if let Object::RCallable(function) = callee_object {
+                    if function.arity() != arguments.len() {
+                        panic!(
+                            "Expected {} arguments, but got {}.",
+                            function.arity(),
+                            arguments.len()
+                        );
+                    }
+
+                    function.run(self, argument_values)
+                } else {
+                    panic!("Can only call functions and classes");
+                }
             }
         }
     }
@@ -208,6 +272,10 @@ impl crate::stmt::Visitor<()> for Interpreter<'_> {
                     Object::RString(s) => {
                         println!("{s}");
                     }
+                    Object::RCallable(f) => {
+                        // if let Some Lox
+                        println!("print not implemented for functions");
+                    }
                 }
             }
             crate::stmt::Stmt::Expression { expr } => {
@@ -222,7 +290,8 @@ impl crate::stmt::Visitor<()> for Interpreter<'_> {
                     .define(name.lexeme.clone(), value.unwrap_or(Object::RNull));
             }
             crate::stmt::Stmt::Block { statements } => {
-                self.execute_block(statements);
+                let env = self.environment.new_enclosed().clone();
+                self.execute_block_2(statements, env);
             }
             crate::stmt::Stmt::If {
                 condition,
@@ -243,6 +312,18 @@ impl crate::stmt::Visitor<()> for Interpreter<'_> {
                     self.execute(body);
                     condition_result = self.evaluate(&condition);
                 }
+            }
+            crate::stmt::Stmt::Function { name, params, body } => {
+                let stmt = Stmt::Function {
+                    name: name.clone(),
+                    params: params.clone(),
+                    body: body.clone(),
+                };
+                let function = LoxFunction::new(stmt);
+                self.environment.define(
+                    name.lexeme.clone(),
+                    Object::RCallable(Box::new(function.clone_box())),
+                );
             }
         }
     }
