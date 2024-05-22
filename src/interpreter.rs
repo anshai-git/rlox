@@ -1,32 +1,36 @@
 use core::panic;
+use std::error::Error;
 
 use crate::{
     environment::{self, Environment},
     expr::Expr,
     lox_callable::{LoxCallable, LoxCallableClone},
     lox_function::LoxFunction,
+    lox_return::LoxReturn,
     native_functions::Clock,
     object::Object,
     stmt::Stmt,
+    token::Token,
     token_type::TokenType,
 };
 
 pub struct Interpreter<'a> {
-    pub program: &'a Vec<Stmt<'a>>,
+    pub program: &'a Vec<Stmt>,
     pub environment: Box<Environment>,
     pub globals: Box<Environment>,
 }
 
 impl<'a> Interpreter<'a> {
     pub fn new(program: &'a Vec<Stmt>) -> Self {
-        let mut globals = Box::new(Environment::new());
+        let mut globals = Box::new(Environment::new(None));
         globals.define(
             "clock".to_string(),
             Object::RCallable(Box::new(Clock::new())),
         );
+
         Interpreter {
             program,
-            environment: Box::new(Environment::new()),
+            environment: Box::new(Environment::new(None)),
             globals,
         }
     }
@@ -37,8 +41,8 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    fn execute(&mut self, stmt: &Stmt) {
-        stmt.accept(self);
+    fn execute(&mut self, stmt: &Stmt) -> Result<(), LoxReturn> {
+        stmt.accept(self)
     }
 
     fn evaluate(&mut self, expr: &Expr) -> Object {
@@ -88,7 +92,7 @@ impl<'a> Interpreter<'a> {
     }
 
     fn enter_scope(&mut self) {
-        let new_environment = self.environment.new_enclosed();
+        let new_environment = Environment::new(Some(self.environment.clone()));
         self.environment = Box::new(new_environment);
     }
 
@@ -104,29 +108,37 @@ impl<'a> Interpreter<'a> {
         }
     }
 
-    pub fn execute_block_2(&mut self, statements: &Vec<Stmt>, env: Environment) {
+    pub fn execute_block_2(&mut self, statements: &Vec<Stmt>, env: Environment) -> Result<(), LoxReturn> {
         let previous = self.environment.clone();
 
-        self.environment = Box::new(env.clone());
+        self.environment = Box::new(env);
 
         for statement in statements {
+            if let Stmt::Return { keyword, value } = statement {
+                self.environment = previous;
+                return Err(LoxReturn::new(self.evaluate(&value.clone().unwrap())));
+            }
             self.execute(statement);
         }
 
         self.environment = previous;
-
-        // if let Some(e) = self.environment.enclosing.clone() {
-        //     self.environment = e;
-        // }
+        Ok(())
     }
 }
 
 impl crate::expr::Visitor<Object> for Interpreter<'_> {
     fn run(&mut self, expr: &Expr) -> Object {
         match expr {
-            Expr::Literal { value } => value.clone(),
-            Expr::Grouping { expr } => self.evaluate(expr),
+            Expr::Literal { value } => {
+                println!("[Expr::Literal]: Value: {:?}, \n>> Environment: {:?}\n", value, self.environment);
+                return value.clone();
+            }
+            Expr::Grouping { expr } => {
+                println!("[Expr::Grouping]: Expr: {:?}, \n>> Environment: {:?}\n", expr, self.environment);
+                return self.evaluate(expr);
+            }
             Expr::Unary { right, operator } => {
+                println!("[Expr::Unary]: Right: {:?}, Operator: {:?}, \n>> Environment: {:?}]\n", right, operator, self.environment);
                 let right: Object = self.evaluate(right);
 
                 match operator.token_type {
@@ -138,11 +150,8 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
                     _ => panic!("Unexpected Token."),
                 }
             }
-            Expr::Binary {
-                left,
-                operator,
-                right,
-            } => {
+            Expr::Binary { left, operator, right } => {
+                println!("[Expr::Binary]: Left {:?}, Right: {:?}, Operator: {:?}, \n>> Environment: {:?}\n", left, right, operator, self.environment);
                 let left: Object = self.evaluate(left);
                 let right: Object = self.evaluate(right);
 
@@ -192,6 +201,8 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
                 }
             }
             Expr::Variable { name } => {
+                println!("[Expr::Variable]: Name: {:?}, \n>> Environment: {:?}\n", name, self.environment);
+
                 if let Some(variable) = self.environment.get(name).clone() {
                     return variable.clone();
                 }
@@ -200,18 +211,16 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
                     return global_variable.clone();
                 }
 
-                panic!("Undefined variable");
+                panic!("Undefined variable {:?}", name);
             }
             Expr::Assign { name, value } => {
+                println!("[Expr::Assign]: Name: {:?}, Value: {:?},\n>> Environment: {:?}\n", name, value, self.environment);
                 let v: Object = self.evaluate(value);
                 self.environment.assign(name, v.clone());
                 v
             }
-            Expr::Logical {
-                left,
-                right,
-                operator,
-            } => {
+            Expr::Logical { left, right, operator } => {
+                println!("[Expr::Logical]: Left: {:?}, Right: {:?}, Operator: {:?},\n>> Environment: {:?}\n", left, right, operator, self.environment);
                 let left_result: Object = self.evaluate(left);
 
                 if let TokenType::Or = operator.token_type {
@@ -226,9 +235,8 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
 
                 self.evaluate(right)
             }
-            Expr::Call {
-                callee, arguments, ..
-            } => {
+            Expr::Call { callee, arguments, .. } => {
+                println!("[Expr::Call]: Callee: {:?}, Arguments: {:?}, \n>> Environment: {:?}\n", callee, arguments, self.environment);
                 let callee_object: Object = self.evaluate(callee);
 
                 let mut argument_values = Vec::new();
@@ -254,10 +262,11 @@ impl crate::expr::Visitor<Object> for Interpreter<'_> {
     }
 }
 
-impl crate::stmt::Visitor<()> for Interpreter<'_> {
-    fn run(&mut self, stmt: &crate::stmt::Stmt) -> () {
+impl crate::stmt::Visitor<LoxReturn> for Interpreter<'_> {
+    fn run(&mut self, stmt: &crate::stmt::Stmt) -> Result<(), LoxReturn> {
         match stmt {
             crate::stmt::Stmt::Print { expr } => {
+                println!("[Stmt::Print]: Expr: {:?},\n>> Environment: {:?}\n", expr, self.environment);
                 let value: Object = self.evaluate(expr);
                 match value {
                     Object::RNull => {
@@ -277,27 +286,30 @@ impl crate::stmt::Visitor<()> for Interpreter<'_> {
                         println!("print not implemented for functions");
                     }
                 }
+                Ok(())
             }
             crate::stmt::Stmt::Expression { expr } => {
+                println!("[Stmt::Expression]: Expr: {:?},\n>> Environment: {:?}\n", expr, self.environment);
                 self.evaluate(expr);
+                Ok(())
             }
             crate::stmt::Stmt::Var { name, initializer } => {
+                println!("[Stmt::Var]: Name: {:?}, Initializer: {:?},\n>> Environment: {:?}\n", name, initializer, self.environment);
                 let mut value: Option<Object> = None;
                 if initializer.is_some() {
                     value = Some(self.evaluate(&initializer.as_ref().unwrap()));
                 }
-                self.environment
-                    .define(name.lexeme.clone(), value.unwrap_or(Object::RNull));
+                self.environment.define(name.lexeme.clone(), value.unwrap_or(Object::RNull));
+                Ok(())
             }
             crate::stmt::Stmt::Block { statements } => {
-                let env = self.environment.new_enclosed().clone();
+                println!("[Stmt::Block]: Statements: {:?},\n>> Environment: {:?}\n", statements, self.environment);
+                let env = Environment::new(Some(self.environment.clone()));
                 self.execute_block_2(statements, env);
+                Ok(())
             }
-            crate::stmt::Stmt::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
+            crate::stmt::Stmt::If { condition, then_branch, else_branch } => {
+                println!("[Stmt::If]: Condition: {:?}, ThenBranch: {:?}, ElseBranch: {:?},\n>> Environment: {:?}\n", condition, then_branch, else_branch, self.environment);
                 let condition: Object = self.evaluate(condition);
 
                 if let Object::RBoolean(_v @ true) = self.is_truthy(&condition) {
@@ -305,25 +317,41 @@ impl crate::stmt::Visitor<()> for Interpreter<'_> {
                 } else if let Some(else_b) = *else_branch.clone() {
                     self.execute(&else_b);
                 }
+
+                Ok(())
             }
             crate::stmt::Stmt::While { condition, body } => {
+                println!("[Stmt::While]: Condition: {:?}, Body: {:?},\n>> Environment: {:?}\n", condition, body, self.environment);
                 let mut condition_result: Object = self.evaluate(&condition);
+
                 while let Object::RBoolean(_v @ true) = self.is_truthy(&condition_result) {
+                    println!("Condition: {:?}, Result: {:?}, Env: {:?}", condition, condition_result, self.environment);
                     self.execute(body);
                     condition_result = self.evaluate(&condition);
                 }
+
+                Ok(())
             }
             crate::stmt::Stmt::Function { name, params, body } => {
-                let stmt = Stmt::Function {
+                println!("[Stmt::Function]: Name: {:?}, Params: {:?}, Body: {:?},\n>> Environment: {:?}\n", name, params, body, self.environment);
+                let function_stmt = Stmt::Function {
                     name: name.clone(),
                     params: params.clone(),
                     body: body.clone(),
                 };
-                let function = LoxFunction::new(stmt);
-                self.environment.define(
-                    name.lexeme.clone(),
-                    Object::RCallable(Box::new(function.clone_box())),
-                );
+
+                let function = Box::new(LoxFunction::new(function_stmt, *self.environment.clone()));
+                self.environment
+                    .define(name.lexeme.clone(), Object::RCallable(function));
+
+                Ok(())
+            }
+            crate::stmt::Stmt::Return { keyword, value } => {
+                println!("[Stmt::Return]: Keyword: {:?}, Value: {:?},\n>> Environment: {:?}\n", keyword, value, self.environment);
+                if let Some(value_expr) = *value.clone() {
+                    return Err(LoxReturn::new(self.evaluate(&value_expr)));
+                }
+                Err(LoxReturn::new(Object::RNull))
             }
         }
     }

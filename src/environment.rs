@@ -10,19 +10,19 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn new() -> Self {
+    pub fn new(enclosing: Option<Box<Self>>) -> Self {
         Environment {
-            enclosing: None,
+            enclosing,
             values: HashMap::new(),
         }
     }
 
-    pub fn new_enclosed(&mut self) -> Self {
-        Environment {
-            enclosing: Some(Box::new(self.clone())),
-            values: HashMap::new(),
-        }
-    }
+    // pub fn new_enclosed(&mut self) -> Self {
+    //     Environment {
+    //         enclosing: Some(Box::new(self.clone())),
+    //         values: HashMap::new(),
+    //     }
+    // }
 
     pub fn define(&mut self, key: String, value: Object) {
         self.values.insert(key, value);

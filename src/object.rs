@@ -1,4 +1,4 @@
-use crate::lox_callable::LoxCallable;
+use crate::{lox_callable::LoxCallable, lox_function::LoxFunction};
 
 #[derive(Debug, Clone)]
 pub enum Object {

@@ -1,0 +1,9 @@
+fun log(message) {
+  print message; 
+}
+
+var i = 0;
+while (i<3) {
+  log("Some logging");
+  i = i + 1;
+}

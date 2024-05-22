@@ -1,21 +1,21 @@
 use crate::{object::Object, token::Token};
 
 #[derive(Clone, Debug)]
-pub enum Expr<'a> {
+pub enum Expr {
     Assign {
-        name: &'a Token,
+        name: Token,
         value: Box<Self>,
     },
     Variable {
-        name: &'a Token,
+        name: Token,
     },
     Unary {
         right: Box<Self>,
-        operator: &'a Token,
+        operator: Token,
     },
     Binary {
         left: Box<Self>,
-        operator: &'a Token,
+        operator: Token,
         right: Box<Self>,
     },
     Grouping {
@@ -27,16 +27,16 @@ pub enum Expr<'a> {
     Logical {
         left: Box<Self>,
         right: Box<Self>,
-        operator: &'a Token,
+        operator: Token,
     },
     Call {
         callee: Box<Self>,
-        paren: &'a Token,
+        paren: Token,
         arguments: Vec<Self>
     }
 }
 
-impl Expr<'_> {
+impl Expr {
     pub fn accept<R, T: Visitor<R>>(&self, visitor: &mut T) -> R {
         visitor.run(self)
     }

@@ -46,10 +46,11 @@ impl RLox {
     pub fn run(&mut self, source: String) {
         let mut scanner: Scanner = Scanner::new(source, self);
         let tokens: &Vec<Token> = scanner.scan_tokens();
-        println!("{:?}", tokens);
+        // println!("{:?}", tokens);
 
         let mut parser: Parser = Parser::new(tokens.to_vec());
         let program: Vec<Stmt> = parser.parse();
+        println!("\n[AST]:\n{:?}\n\n", program);
 
         if self.had_error {
             panic!("HAD ERROR TRUE");

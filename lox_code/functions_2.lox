@@ -1,0 +1,15 @@
+fun log(message, level) {
+  if (level == 1) {
+    print "[INFO]: " + message;
+  }
+
+  if (level == 2) {
+    print "[WARN]: " + message;
+  }
+
+  if (level < 1 and level > 2) {
+    print "Invalid log level";
+  }
+}
+
+log("Some Info message", 1);

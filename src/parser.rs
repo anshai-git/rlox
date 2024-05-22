@@ -26,7 +26,7 @@ impl Parser {
         statements
     }
 
-    fn declaration<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt<'a>> {
+    fn declaration<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt> {
         if Parser::match_tokens(tokens, current, vec![TokenType::Fun]) {
             return Parser::function_declaration(tokens, current, "function");
         }
@@ -45,19 +45,10 @@ impl Parser {
         tokens: &'a Vec<Token>,
         current: &mut i16,
         kind: &str,
-    ) -> Option<Stmt<'a>> {
-        let name = Parser::consume(
-            tokens,
-            current,
-            TokenType::Identifier,
-            format!("Expect {} name.", kind).as_str(),
-        );
-        Parser::consume(
-            tokens,
-            current,
-            TokenType::LeftParen,
-            format!("Expect '(' after {} name.", kind).as_str(),
-        );
+    ) -> Option<Stmt> {
+        let name = Parser::consume(tokens, current, TokenType::Identifier, format!("Expect {} name.", kind).as_str());
+        Parser::consume(tokens, current, TokenType::LeftParen, format!("Expect '(' after {} name.", kind).as_str());
+
         let mut parameters = Vec::new();
         if !Parser::check(tokens, current, TokenType::RightParen) {
             loop {
@@ -65,39 +56,20 @@ impl Parser {
                     panic!("Can't have more than 255 parameters.");
                 }
 
-                parameters.push(Parser::consume(
-                    tokens,
-                    current,
-                    TokenType::Identifier,
-                    "Expect parameter name.",
-                ));
+                parameters.push(Parser::consume( tokens, current, TokenType::Identifier, "Expect parameter name."));
 
                 if !Parser::match_tokens(tokens, current, vec![TokenType::Comma]) {
                     break;
                 }
             }
         }
-        Parser::consume(
-            tokens,
-            current,
-            TokenType::RightParen,
-            "Expect ')' after parameters.",
-        );
-        Parser::consume(
-            tokens,
-            current,
-            TokenType::LeftBrace,
-            format!("Expect '{{' before {} body.", kind).as_str(),
-        );
+        Parser::consume(tokens, current, TokenType::RightParen, "Expect ')' after parameters.",);
+        Parser::consume(tokens, current, TokenType::LeftBrace, format!("Expect '{{' before {} body.", kind).as_str(),);
         let body = Parser::block(tokens, current);
-        Some(Stmt::Function {
-            name,
-            params: parameters,
-            body,
-        })
+        Some(Stmt::Function { name: name.clone(), params: parameters.into_iter().cloned().collect(), body })
     }
 
-    fn var_declaration<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt<'a>> {
+    fn var_declaration<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt> {
         if !Parser::is_at_end(tokens, current) {
             let name: &Token = Parser::consume(
                 tokens,
@@ -123,7 +95,7 @@ impl Parser {
         None
     }
 
-    fn statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt<'a>> {
+    fn statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Option<Stmt> {
         if !Parser::is_at_end(tokens, current) {
             if Parser::match_tokens(tokens, current, vec![TokenType::For]) {
                 return Some(Parser::for_statement(tokens, current));
@@ -135,6 +107,10 @@ impl Parser {
 
             if Parser::match_tokens(tokens, current, vec![TokenType::Print]) {
                 return Some(Parser::print_statement(tokens, current));
+            }
+
+            if Parser::match_tokens(tokens, current, vec![TokenType::Return]) {
+                return Some(Parser::return_statement(tokens, current));
             }
 
             if Parser::match_tokens(tokens, current, vec![TokenType::While]) {
@@ -151,7 +127,25 @@ impl Parser {
         None
     }
 
-    fn for_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
+    fn return_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt {
+        let keyword: Token = Parser::get_previous(tokens, current).clone();
+        let mut value = None;
+        if !Parser::check(tokens, current, TokenType::Semicolon) {
+            value = Some(Parser::expression(tokens, current));
+        }
+        Parser::consume(
+            tokens,
+            current,
+            TokenType::Semicolon,
+            "Expect ';' after return value.",
+        );
+        Stmt::Return {
+            keyword,
+            value: Box::new(value),
+        }
+    }
+
+    fn for_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt {
         Parser::consume(
             tokens,
             current,
@@ -223,7 +217,7 @@ impl Parser {
         body
     }
 
-    fn while_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
+    fn while_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt {
         Parser::consume(
             tokens,
             current,
@@ -244,7 +238,7 @@ impl Parser {
         }
     }
 
-    fn if_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
+    fn if_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt {
         Parser::consume(
             tokens,
             current,
@@ -272,7 +266,7 @@ impl Parser {
         }
     }
 
-    fn block<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Vec<Stmt<'a>> {
+    fn block<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Vec<Stmt> {
         let mut statements: Vec<Stmt> = Vec::new();
         while !Parser::check(tokens, current, TokenType::RightBrace)
             && !Parser::is_at_end(tokens, current)
@@ -290,7 +284,7 @@ impl Parser {
         statements
     }
 
-    fn print_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
+    fn print_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt {
         let value: Expr = Parser::expression(tokens, current);
         Parser::consume(
             tokens,
@@ -303,7 +297,7 @@ impl Parser {
         }
     }
 
-    fn expression_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt<'a> {
+    fn expression_statement<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Stmt {
         let expr: Expr = Parser::expression(tokens, current);
         Parser::consume(
             tokens,
@@ -317,11 +311,11 @@ impl Parser {
     }
 
     // expression →  equality ;
-    fn expression<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn expression<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         Parser::assignment(tokens, current)
     }
 
-    fn assignment<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn assignment<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let expr = Parser::or(tokens, current);
 
         if Parser::match_tokens(tokens, current, vec![TokenType::Equal]) {
@@ -340,7 +334,7 @@ impl Parser {
         expr
     }
 
-    fn or<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn or<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let mut expr: Expr = Parser::and(tokens, current);
         while Parser::match_tokens(tokens, current, vec![TokenType::Or]) {
             let operator: &Token = Parser::get_previous(tokens, current);
@@ -348,13 +342,13 @@ impl Parser {
             expr = Expr::Logical {
                 left: Box::new(expr),
                 right: Box::new(right),
-                operator,
+                operator: operator.clone(),
             };
         }
         expr
     }
 
-    fn and<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn and<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let mut expr: Expr = Parser::equality(tokens, current);
         while Parser::match_tokens(tokens, current, vec![TokenType::And]) {
             let operator: &Token = Parser::get_previous(tokens, current);
@@ -362,14 +356,14 @@ impl Parser {
             expr = Expr::Logical {
                 left: Box::new(expr),
                 right: Box::new(right),
-                operator,
+                operator: operator.clone(),
             };
         }
         expr
     }
 
     // equality →  comparison ( ( "!=" | "==" ) comparison )* ;
-    fn equality<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn equality<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let mut expr = Parser::comparison(tokens, current);
 
         while Parser::match_tokens(
@@ -381,7 +375,7 @@ impl Parser {
             let right: Expr = Parser::comparison(tokens, current);
             expr = Expr::Binary {
                 left: Box::new(expr),
-                operator,
+                operator: operator.clone(),
                 right: Box::new(right),
             };
         }
@@ -390,7 +384,7 @@ impl Parser {
     }
 
     // comparison →  term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-    fn comparison<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn comparison<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let mut expr = Parser::term(tokens, current);
 
         while Parser::match_tokens(
@@ -407,7 +401,7 @@ impl Parser {
             let right: Expr = Parser::term(tokens, current);
             expr = Expr::Binary {
                 left: Box::new(expr),
-                operator,
+                operator: operator.clone(),
                 right: Box::new(right),
             };
         }
@@ -416,7 +410,7 @@ impl Parser {
     }
 
     // term →  factor ( ( "-" | "+" ) factor )* ;
-    fn term<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn term<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let mut expr = Parser::factor(tokens, current);
 
         while Parser::match_tokens(tokens, current, vec![TokenType::Minus, TokenType::Plus]) {
@@ -424,7 +418,7 @@ impl Parser {
             let right: Expr = Parser::factor(tokens, current);
             expr = Expr::Binary {
                 left: Box::new(expr),
-                operator,
+                operator: operator.clone(),
                 right: Box::new(right),
             };
         }
@@ -433,7 +427,7 @@ impl Parser {
     }
 
     // factor →  unary ( ( "/" | "*" ) unary )* ;
-    fn factor<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn factor<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let mut expr = Parser::unary(tokens, current);
 
         while Parser::match_tokens(tokens, current, vec![TokenType::Slash, TokenType::Star]) {
@@ -441,7 +435,7 @@ impl Parser {
             let right: Expr = Parser::unary(tokens, current);
             expr = Expr::Binary {
                 left: Box::new(expr),
-                operator,
+                operator: operator.clone(),
                 right: Box::new(right),
             };
         }
@@ -450,20 +444,20 @@ impl Parser {
     }
 
     // unary →  ( "!" | "-" ) unary | primary ;
-    fn unary<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn unary<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         if Parser::match_tokens(tokens, current, vec![TokenType::Bang, TokenType::Minus]) {
             let operator: &Token = Parser::get_previous(tokens, current);
             let right: Expr = Parser::unary(tokens, current);
             Expr::Unary {
                 right: Box::new(right),
-                operator,
+                operator: operator.clone(),
             }
         } else {
             Parser::call(tokens, current)
         }
     }
 
-    fn call<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn call<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         let mut expr = Parser::primary(tokens, current);
         loop {
             if Parser::match_tokens(tokens, current, vec![TokenType::LeftParen]) {
@@ -475,7 +469,7 @@ impl Parser {
         expr
     }
 
-    fn finish_call<'a>(tokens: &'a Vec<Token>, current: &mut i16, callee: Expr<'a>) -> Expr<'a> {
+    fn finish_call<'a>(tokens: &'a Vec<Token>, current: &mut i16, callee: Expr) -> Expr {
         let mut arguments = Vec::new();
         if !Parser::check(tokens, current, TokenType::RightParen) {
             loop {
@@ -499,13 +493,13 @@ impl Parser {
 
         Expr::Call {
             callee: Box::new(callee),
-            paren,
+            paren: paren.clone(),
             arguments,
         }
     }
 
     // primary →  NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
-    fn primary<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr<'a> {
+    fn primary<'a>(tokens: &'a Vec<Token>, current: &mut i16) -> Expr {
         if Parser::match_tokens(tokens, current, vec![TokenType::True]) {
             return Expr::Literal {
                 value: Object::RBoolean(true),
@@ -533,7 +527,7 @@ impl Parser {
 
         if Parser::match_tokens(tokens, current, vec![TokenType::Identifier]) {
             let name: &Token = &Parser::get_previous(tokens, current);
-            return Expr::Variable { name };
+            return Expr::Variable { name: name.clone() };
         }
 
         if Parser::match_tokens(tokens, current, vec![TokenType::LeftParen]) {

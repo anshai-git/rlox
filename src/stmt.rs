@@ -1,42 +1,46 @@
 use crate::{expr::Expr, token::Token};
 
 #[derive(Clone, Debug)]
-pub enum Stmt<'a> {
+pub enum Stmt {
     Expression {
-        expr: Box<Expr<'a>>,
+        expr: Box<Expr>,
     },
     Print {
-        expr: Box<Expr<'a>>,
+        expr: Box<Expr>,
     },
     Var {
         name: Token,
-        initializer: Option<Expr<'a>>,
+        initializer: Option<Expr>,
     },
     Block {
         statements: Vec<Self>,
     },
     If {
-        condition: Box<Expr<'a>>,
+        condition: Box<Expr>,
         then_branch: Box<Self>,
         else_branch: Box<Option<Self>>,
     },
     While {
-        condition: Box<Expr<'a>>,
+        condition: Box<Expr>,
         body: Box<Self>,
     },
     Function {
-        name: &'a Token,
-        params: Vec<&'a Token>,
-        body: Vec<Stmt<'a>>,
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Self>,
     },
+    Return {
+        keyword: Token,
+        value: Box<Option<Expr>>
+    }
 }
 
-impl Stmt<'_> {
-    pub fn accept<R, T: Visitor<R>>(&self, visitor: &mut T) -> R {
+impl Stmt {
+    pub fn accept<R, T: Visitor<R>>(&self, visitor: &mut T) -> Result<(), R> {
         visitor.run(self)
     }
 }
 
 pub trait Visitor<R> {
-    fn run(&mut self, stmt: &Stmt) -> R;
+    fn run(&mut self, stmt: &Stmt) -> Result<(), R>;
 }

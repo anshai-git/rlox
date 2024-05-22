@@ -8,17 +8,21 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct LoxFunction<'a> {
-    declaration: Stmt<'a>,
+pub struct LoxFunction {
+    declaration: Stmt,
+    closure: Environment,
 }
 
-impl<'a> LoxFunction<'a> {
-    pub fn new(declaration: Stmt<'a>) -> Self {
-        Self { declaration }
+impl LoxFunction {
+    pub fn new(declaration: Stmt, closure: Environment) -> Self {
+        Self {
+            declaration,
+            closure,
+        }
     }
 }
 
-impl<'a> LoxCallable for LoxFunction<'static> {
+impl<'a> LoxCallable for LoxFunction {
     fn arity(&self) -> usize {
         if let Stmt::Function { params, .. } = self.declaration.clone() {
             return params.len();
@@ -32,20 +36,18 @@ impl<'a> LoxCallable for LoxFunction<'static> {
         arguments: Vec<Object>,
     ) -> Object {
         if let Stmt::Function { params, body, .. } = self.declaration.clone() {
-            let mut environment = Environment {
-                enclosing: Some(Box::new(Environment {
-                    enclosing: None,
-                    values: interpreter.globals.values.clone(),
-                })),
-                values: HashMap::new(),
-            };
+            let mut environment = Environment::new(Some(Box::new(self.closure.clone())));
+
             for (index, param) in params.iter().enumerate() {
                 environment.define(
                     params.get(index).unwrap().lexeme.clone(),
                     arguments.get(index).unwrap().clone(),
                 );
             }
-            interpreter.execute_block_2(&body, environment);
+
+            if let Err(return_value) = interpreter.execute_block_2(&body, environment) {
+                return return_value.value;
+            }
         }
 
         Object::RNull

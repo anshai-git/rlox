@@ -8,6 +8,8 @@ mod expr;
 mod interpreter;
 mod literal; // deprecated, instead: Object
 mod lox_callable;
+mod lox_function;
+mod lox_return;
 mod native_functions;
 mod object;
 mod parser;
@@ -16,7 +18,6 @@ mod scanner;
 mod stmt;
 mod token;
 mod token_type;
-mod lox_function;
 
 use rlox::RLox;
 
