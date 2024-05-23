@@ -1,9 +1,6 @@
-use crate::interpreter::Interpreter;
-use crate::parser::Parser;
-use crate::scanner::Scanner;
-use crate::stmt::Stmt;
-use crate::token::Token;
 use std::{fs, io, process};
+
+use crate::scanner::Scanner;
 
 pub struct RLox {
     had_error: bool,
@@ -44,30 +41,15 @@ impl RLox {
     }
 
     pub fn run(&mut self, source: String) {
-        let mut scanner: Scanner = Scanner::new(source, self);
-        let tokens: &Vec<Token> = scanner.scan_tokens();
-        println!("{:?}", tokens);
-
-        let mut parser: Parser = Parser::new(tokens.to_vec());
-        let program: Vec<Stmt> = parser.parse();
-
-        if self.had_error {
-            panic!("HAD ERROR TRUE");
-        }
-
-        // println!("AST: {}", AstPrinter::new().run(&program));
-        // println!("\n result: ");
-
-        let mut interpreter: Interpreter = Interpreter::new(&program);
-        interpreter.interpret();
+        let scanner = Scanner::new(source, self);
     }
 
     // Error handling
-    pub fn error(&mut self, line: u16, message: String) {
+    pub fn error(&mut self, line: u64, message: String) {
         self.report(line, String::new(), message);
     }
 
-    pub fn report(&mut self, line: u16, location: String, message: String) {
+    pub fn report(&mut self, line: u64, location: String, message: String) {
         println!("[line {}] Error {}: {}", line, location, message);
         self.had_error = true;
     }

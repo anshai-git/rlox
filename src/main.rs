@@ -2,21 +2,11 @@
 
 use clap::{command, Arg, ArgMatches, Command};
 
-mod ast_printer;
-mod environment;
-mod expr;
-mod interpreter;
-mod literal; // deprecated, instead: Object
-mod lox_callable;
-mod native_functions;
-mod object;
-mod parser;
 mod rlox;
-mod scanner;
-mod stmt;
-mod token;
 mod token_type;
-mod lox_function;
+mod token;
+mod object;
+mod scanner;
 
 use rlox::RLox;
 
