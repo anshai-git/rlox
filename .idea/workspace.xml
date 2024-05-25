@@ -8,14 +8,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="40d5bb12-b55d-4ec1-b78a-51c594029ef7" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/expr.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expr.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/interpreter.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/interpreter.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lox_function.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/lox_function.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/object.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/object.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rlox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rlox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/stmt.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/stmt.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/scanner.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/scanner.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/token.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/token.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/token_type.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/token_type.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,9 +26,9 @@
   <component name="MacroExpansionManager">
     <option name="directoryName" value="rsrxm65e" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="2gmcGihm2aqIznbwUz4pU0LuPAD" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -38,17 +36,21 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Cargo.Run rlox.executor": "Debug",
+    "Cargo.Run rlox.executor": "Run",
+    "Cargo.Test scanner::scanner_tests::test_scann_number.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.rust.reset.selective.auto.import": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "/Users/kovacservin/Self/Study/rlox",
+    "last_opened_file_path": "/home/anshai/Self/Study/rlox",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
-    "org.rust.first.attach.projects": "true"
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager"
   }
 }]]></component>
-  <component name="RunManager" selected="Cargo.Run rlox">
+  <component name="RunManager" selected="Cargo.Test scanner::scanner_tests::test_scann_number">
     <configuration name="Run rlox" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="run --package rlox --bin rlox ./lox_code/fibonacci.lox" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -83,13 +85,36 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test scanner::scanner_tests::test_scann_number" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="test --package rlox --bin rlox scanner::scanner_tests::test_scann_number -- --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Cargo.Run rlox" />
       <item itemvalue="Cargo.Test rlox" />
+      <item itemvalue="Cargo.Test scanner::scanner_tests::test_scann_number" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cargo.Test scanner::scanner_tests::test_scann_number" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="RustProjectSettings">
-    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="toolchainHomeDirectory" value="/bin" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -100,6 +125,7 @@
       <option name="presentableId" value="Default" />
       <updated>1716306101417</updated>
       <workItem from="1716306102627" duration="248000" />
+      <workItem from="1716628225509" duration="368000" />
     </task>
     <servers />
   </component>
@@ -113,6 +139,11 @@
           <url>file://$PROJECT_DIR$/src/interpreter.rs</url>
           <line>200</line>
           <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/scanner.rs</url>
+          <line>134</line>
+          <option name="timeStamp" value="5" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

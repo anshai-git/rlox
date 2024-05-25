@@ -1,6 +1,6 @@
 use std::{fs, io, process};
 
-use crate::scanner::Scanner;
+use crate::{scanner::Scanner, token::Token};
 
 pub struct RLox {
     had_error: bool,
@@ -30,7 +30,6 @@ impl RLox {
                         break 'repl;
                     }
 
-                    // TODO: solve without cloning here
                     self.run(line.clone());
                     self.had_error = false;
                 }
@@ -41,10 +40,11 @@ impl RLox {
     }
 
     pub fn run(&mut self, source: String) {
-        let scanner = Scanner::new(source, self);
+        let mut scanner = Scanner::new(source, self);
+        let tokens: Vec<Token> = scanner.scan_tokens();
+        println!("\n[TOKENS]:\n {:?}", tokens);
     }
 
-    // Error handling
     pub fn error(&mut self, line: u64, message: String) {
         self.report(line, String::new(), message);
     }
