@@ -208,7 +208,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn peek_next(&mut self) -> char {
-        if (self.current + 1) as usize > self.source.chars().count() {
+        if (self.current + 1) as usize >= self.source.chars().count() {
             return '\0';
         }
         self.source.chars().nth((self.current + 1) as usize).unwrap()

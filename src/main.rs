@@ -7,6 +7,8 @@ mod token_type;
 mod token;
 mod object;
 mod scanner;
+mod expression;
+mod parser;
 
 use rlox::RLox;
 
