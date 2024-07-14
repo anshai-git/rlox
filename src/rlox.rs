@@ -1,6 +1,9 @@
 use std::{fs, io, process};
 
-use crate::{expression::Expression, parser::Parser, scanner::Scanner, token::Token};
+use crate::{
+    expression::Expression, interpreter::Interpreter, parser::Parser, scanner::Scanner,
+    token::Token,
+};
 
 pub struct RLox {
     had_error: bool,
@@ -47,6 +50,9 @@ impl RLox {
 
         let mut parser: Parser = Parser::new(tokens);
         let expression: Expression = parser.parse();
+
+        let interpreter: Interpreter = Interpreter::new();
+        interpreter.interpret(&expression);
 
         println!("\n\n[AST]:\n\n{:?}\n\n", expression);
     }

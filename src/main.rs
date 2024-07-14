@@ -2,13 +2,14 @@
 
 use clap::{command, Arg, ArgMatches, Command};
 
-mod rlox;
-mod token_type;
-mod token;
-mod object;
-mod scanner;
 mod expression;
+mod interpreter;
+mod object;
 mod parser;
+mod rlox;
+mod scanner;
+mod token;
+mod token_type;
 
 use rlox::RLox;
 

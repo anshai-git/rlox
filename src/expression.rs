@@ -22,20 +22,20 @@ pub enum Expression {
 }
 
 pub trait ExpressionVisitor {
-    fn visit_binary_expression(&self, expr: &Expression);
-    fn visit_grouping_expression(&self, expr: &Expression);
-    fn visit_literal_expression(&self, expr: &Expression);
-    fn visit_unary_expression(&self, expr: &Expression);
+    fn visit_binary_expression(&self, expr: &Expression) -> Object;
+    fn visit_grouping_expression(&self, expr: &Expression) -> Object;
+    fn visit_literal_expression(&self, expr: &Expression) -> Object;
+    fn visit_unary_expression(&self, expr: &Expression) -> Object;
 }
 
 impl Expression {
-    pub fn accept<T: ExpressionVisitor>(&self, visitor: T) {
+    pub fn accept<T: ExpressionVisitor>(&self, visitor: &T) -> Object {
+        println!("accept >> {:?}", self);
         match self {
-            Binary => visitor.visit_binary_expression(self),
-            Grouping => visitor.visit_grouping_expression(self),
-            Unary => visitor.visit_unary_expression(self),
-            Literal => visitor.visit_literal_expression(self),
-            _ => println!(""),
+            Expression::Binary { .. } => visitor.visit_binary_expression(self),
+            Expression::Grouping { .. } => visitor.visit_grouping_expression(self),
+            Expression::Unary { .. } => visitor.visit_unary_expression(self),
+            Expression::Literal { .. } => visitor.visit_literal_expression(self),
         }
     }
 }
