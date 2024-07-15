@@ -2,12 +2,14 @@
 
 use clap::{command, Arg, ArgMatches, Command};
 
+mod environment;
 mod expression;
 mod interpreter;
 mod object;
 mod parser;
 mod rlox;
 mod scanner;
+mod statement;
 mod token;
 mod token_type;
 

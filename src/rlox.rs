@@ -2,7 +2,7 @@ use std::{fs, io, process};
 
 use crate::{
     expression::Expression, interpreter::Interpreter, parser::Parser, scanner::Scanner,
-    token::Token,
+    statement::Statement, token::Token,
 };
 
 pub struct RLox {
@@ -46,15 +46,13 @@ impl RLox {
         let mut scanner = Scanner::new(source, self);
         let tokens: Vec<Token> = scanner.scan_tokens();
 
-        println!("\n\n[TOKENS]:\n\n{:?}\n\n", &tokens);
+        // println!("\n\n[TOKENS]:\n\n{:?}\n\n", &tokens);
 
         let mut parser: Parser = Parser::new(tokens);
-        let expression: Expression = parser.parse();
+        let statements: Vec<Statement> = parser.parse();
 
-        let interpreter: Interpreter = Interpreter::new();
-        interpreter.interpret(&expression);
-
-        println!("\n\n[AST]:\n\n{:?}\n\n", expression);
+        let mut interpreter: Interpreter = Interpreter::new();
+        interpreter.interpret(statements);
     }
 
     pub fn error(&mut self, line: u64, message: String) {

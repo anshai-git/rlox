@@ -1,22 +1,44 @@
+use std::borrow::BorrowMut;
+
 use crate::{
+    environment::Environment,
     expression::{Expression, ExpressionVisitor},
     object::Object,
+    statement::{Statement, StatementVisitor},
     token_type::TokenType,
 };
 
-pub struct Interpreter {}
+pub struct Interpreter {
+    environment: Environment,
+}
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environment: Environment::new(),
+        }
     }
 
-    pub fn interpret(&self, expr: &Expression) {
-        let val: Object = Interpreter::evaluate(expr, self);
-        println!("{:?}", val);
+    pub fn interpret(&mut self, mut statements: Vec<Statement>) {
+        for statement in statements.iter_mut() {
+            Interpreter::execute(statement, self);
+        }
     }
 
-    pub fn evaluate<T: ExpressionVisitor>(expr: &Expression, visitor: &T) -> Object {
+    pub fn execute_block(&mut self, mut statements: &mut Vec<Statement>, environment: Environment) {
+        let previous: Environment = self.environment.clone();
+        self.environment = environment;
+        for statement in statements.iter_mut() {
+            Interpreter::execute(statement, self);
+        }
+        self.environment = previous;
+    }
+
+    pub fn execute<T: StatementVisitor>(stmt: &mut Statement, visitor: &mut T) -> () {
+        stmt.accept(visitor);
+    }
+
+    pub fn evaluate<T: ExpressionVisitor>(expr: &Expression, visitor: &mut T) -> Object {
         expr.accept(visitor)
     }
 
@@ -40,7 +62,68 @@ impl Interpreter {
     }
 }
 
+impl StatementVisitor for Interpreter {
+    fn visit_block_stmt(&mut self, stmt: &mut Statement) {
+        if let Statement::Block { ref mut statements } = stmt {
+            self.execute_block(
+                statements,
+                Environment::with_enclosing(self.environment.clone()),
+            );
+        } else {
+            panic!("Expected Statement::Block")
+        }
+    }
+
+    fn visit_var_stmt(&mut self, stmt: &Statement) {
+        if let Statement::Var { name, initializer } = stmt {
+            let value: Object = match initializer.as_ref() {
+                Some(ref expr) => Interpreter::evaluate(expr, self),
+                None => Object::Null,
+            };
+
+            self.environment.define(name.lexeme.clone(), value);
+        } else {
+            panic!("Expected Statement::Var")
+        }
+    }
+
+    fn visit_print_stmt(&mut self, stmt: &Statement) -> () {
+        if let Statement::Print { value } = stmt {
+            let value: Object = Interpreter::evaluate(value, self);
+            println!("{:?}", value);
+        } else {
+            panic!("Expected Statement::Print")
+        }
+    }
+
+    fn visit_expression_stmt(&mut self, stmt: &Statement) -> () {
+        if let Statement::Expression { expression } = stmt {
+            Interpreter::evaluate(expression, self);
+        } else {
+            panic!("Expected Statement::Expression")
+        }
+    }
+}
+
 impl ExpressionVisitor for Interpreter {
+    fn visit_assign_expression(&mut self, expr: &Expression) -> Object {
+        if let Expression::Assign { name, value } = expr {
+            let value: Object = Interpreter::evaluate(expr, self);
+            self.environment.assign(name.clone(), value.clone());
+            return value;
+        } else {
+            panic!("Expected Expression::Assign");
+        }
+    }
+
+    fn visit_variable_expression(&mut self, expr: &Expression) -> Object {
+        if let Expression::Variable { name } = expr {
+            self.environment.get(name.clone())
+        } else {
+            panic!("Expected Expression::Variable")
+        }
+    }
+
     fn visit_literal_expression(&self, expr: &Expression) -> Object {
         println!("visit literal >> {:?}", expr);
         if let Expression::Literal { value } = expr {
@@ -50,7 +133,7 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_grouping_expression(&self, expr: &Expression) -> Object {
+    fn visit_grouping_expression(&mut self, expr: &Expression) -> Object {
         if let Expression::Grouping { expression } = expr {
             Interpreter::evaluate(expression, self)
         } else {
@@ -58,7 +141,7 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_binary_expression(&self, expr: &Expression) -> Object {
+    fn visit_binary_expression(&mut self, expr: &Expression) -> Object {
         println!("{:?}", expr);
         if let Expression::Binary {
             left,
@@ -121,7 +204,7 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_unary_expression(&self, expr: &Expression) -> Object {
+    fn visit_unary_expression(&mut self, expr: &Expression) -> Object {
         if let Expression::Unary { operator, right } = expr {
             let right: Object = Interpreter::evaluate(right, self);
             match operator.token_type {
