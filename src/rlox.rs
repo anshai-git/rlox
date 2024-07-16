@@ -60,7 +60,7 @@ impl RLox {
     }
 
     pub fn report(&mut self, line: u64, location: String, message: String) {
-        println!("[line {}] Error {}: {}", line, location, message);
+        // println!("[line {}] Error {}: {}", line, location, message);
         self.had_error = true;
     }
 }

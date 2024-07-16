@@ -63,6 +63,34 @@ impl Interpreter {
 }
 
 impl StatementVisitor for Interpreter {
+    fn visit_while_stmt(&mut self, stmt: &mut Statement) {
+        if let Statement::While { condition, body } = stmt {
+            while Interpreter::is_truthy(Interpreter::evaluate(condition, self)) {
+                Interpreter::execute(body, self);
+            }
+        } else {
+            panic!("Expected Statement::While")
+        }
+    }
+
+    fn visit_if_stmt(&mut self, stmt: &mut Statement) {
+        if let Statement::If {
+            condition,
+            then_branch,
+            else_branch,
+        } = stmt
+        {
+            let condition_expr_result: Object = Interpreter::evaluate(condition, self);
+            if Interpreter::is_truthy(condition_expr_result) {
+                Interpreter::execute(then_branch, self);
+            } else if let Some(ref mut else_branch_stmt) = else_branch.as_mut() {
+                Interpreter::execute(else_branch_stmt, self);
+            }
+        } else {
+            panic!("Expected Statement::If")
+        }
+    }
+
     fn visit_block_stmt(&mut self, stmt: &mut Statement) {
         if let Statement::Block { ref mut statements } = stmt {
             self.execute_block(
@@ -106,11 +134,35 @@ impl StatementVisitor for Interpreter {
 }
 
 impl ExpressionVisitor for Interpreter {
+    fn visit_logical_expression(&mut self, expr: &Expression) -> Object {
+        if let Expression::Logical {
+            left,
+            operator,
+            right,
+        } = expr
+        {
+            let left_expr_result: Object = Interpreter::evaluate(left, self);
+            if operator.token_type == TokenType::Or {
+                if Interpreter::is_truthy(left_expr_result.clone()) {
+                    return left_expr_result;
+                }
+            } else {
+                if !Interpreter::is_truthy(left_expr_result.clone()) {
+                    return left_expr_result;
+                }
+            }
+
+            Interpreter::evaluate(right, self)
+        } else {
+            panic!("Expected Expression::Logical");
+        }
+    }
+
     fn visit_assign_expression(&mut self, expr: &Expression) -> Object {
         if let Expression::Assign { name, value } = expr {
-            let value: Object = Interpreter::evaluate(expr, self);
-            self.environment.assign(name.clone(), value.clone());
-            return value;
+            let value_expr_result: Object = Interpreter::evaluate(value, self);
+            self.environment.assign(name.clone(), value_expr_result.clone());
+            return value_expr_result;
         } else {
             panic!("Expected Expression::Assign");
         }
@@ -125,7 +177,7 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_literal_expression(&self, expr: &Expression) -> Object {
-        println!("visit literal >> {:?}", expr);
+        // println!("visit literal >> {:?}", expr);
         if let Expression::Literal { value } = expr {
             value.clone()
         } else {
@@ -142,7 +194,7 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_binary_expression(&mut self, expr: &Expression) -> Object {
-        println!("{:?}", expr);
+        // println!("{:?}", expr);
         if let Expression::Binary {
             left,
             right,

@@ -26,10 +26,12 @@ impl Environment {
     pub fn assign(&mut self, name: Token, value: Object) -> () {
         if self.values.contains_key(name.lexeme.as_str()) {
             self.values.insert(name.lexeme.clone(), value.clone());
+            return;
         }
 
         if let Some(ref mut enclosing) = *self.enclosing {
-            return enclosing.assign(name, value);
+            enclosing.assign(name, value);
+            return;
         }
 
         panic!("Undefined variable");

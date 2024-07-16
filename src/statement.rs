@@ -10,9 +10,18 @@ pub enum Statement {
     Expression {
         expression: Box<Expression>,
     },
+    If {
+        condition: Box<Expression>,
+        then_branch: Box<Self>,
+        else_branch: Box<Option<Self>>,
+    },
     Var {
         name: Token,
         initializer: Box<Option<Expression>>,
+    },
+    While {
+        condition: Box<Expression>,
+        body: Box<Self>,
     },
 }
 
@@ -21,6 +30,8 @@ pub trait StatementVisitor {
     fn visit_expression_stmt(&mut self, stmt: &Statement);
     fn visit_var_stmt(&mut self, stmt: &Statement);
     fn visit_block_stmt(&mut self, stmt: &mut Statement);
+    fn visit_if_stmt(&mut self, stmt: &mut Statement);
+    fn visit_while_stmt(&mut self, stmt: &mut Statement);
 }
 
 impl Statement {
@@ -30,6 +41,8 @@ impl Statement {
             Statement::Expression { .. } => visitor.visit_expression_stmt(self),
             Statement::Var { .. } => visitor.visit_var_stmt(self),
             Statement::Block { .. } => visitor.visit_block_stmt(self),
+            Statement::If { .. } => visitor.visit_if_stmt(self),
+            Statement::While { .. } => visitor.visit_while_stmt(self),
         }
     }
 }

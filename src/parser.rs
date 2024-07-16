@@ -54,8 +54,20 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Statement {
+        if self.match_token(For) {
+            return self.for_statement();
+        }
+
+        if self.match_token(If) {
+            return self.if_statement();
+        }
+
         if self.match_token(Print) {
             return self.print_statement();
+        }
+
+        if self.match_token(While) {
+            return self.while_statement();
         }
 
         if self.match_token(LeftBrace) {
@@ -65,6 +77,92 @@ impl Parser {
         }
 
         self.expression_statement()
+    }
+
+    fn for_statement(&mut self) -> Statement {
+        self.consume(LeftParen, "Expect '(' after 'for'.");
+
+        let mut initializer: Option<Statement> = None;
+        if self.match_token(Semicolon) {
+            initializer = None;
+        } else if self.match_token(Var) {
+            initializer = Some(self.var_declaration());
+        } else {
+            initializer = Some(self.expression_statement());
+        }
+
+        let mut condition: Option<Expression> = None;
+        if !self.check(Semicolon) {
+            condition = Some(self.expression());
+        }
+        self.consume(Semicolon, "Expect ';' after loop condition.");
+
+        let mut increment: Option<Expression> = None;
+        if !self.check(RightParen) {
+            increment = Some(self.expression());
+        }
+        self.consume(RightParen, "Expect ')' after for clauses.");
+
+        let mut body: Statement = self.statement();
+
+        if let Some(increment_expression) = increment {
+            body = Statement::Block {
+                statements: vec![
+                    body,
+                    Statement::Expression {
+                        expression: Box::new(increment_expression),
+                    },
+                ],
+            }
+        }
+
+        if let None = condition {
+            condition = Some(Expression::Literal {
+                value: Object::Boolean(true),
+            })
+        }
+        body = Statement::While {
+            condition: Box::new(condition.unwrap()),
+            body: Box::new(body),
+        };
+
+        if let Some(initializer_expression) = initializer {
+            body = Statement::Block {
+                statements: vec![initializer_expression, body],
+            }
+        }
+
+        return body;
+    }
+
+    fn while_statement(&mut self) -> Statement {
+        self.consume(LeftParen, "Expect '(' after 'while'.");
+        let condition: Expression = self.expression();
+        self.consume(RightParen, "Expect ')' after condition.");
+        let body: Statement = self.statement();
+
+        Statement::While {
+            condition: Box::new(condition),
+            body: Box::new(body),
+        }
+    }
+
+    fn if_statement(&mut self) -> Statement {
+        self.consume(LeftParen, "Expect '(' after 'if'.");
+        let condition: Expression = self.expression();
+        self.consume(RightParen, "Expect ')' after condition.");
+
+        let then_branch: Statement = self.statement();
+        let mut else_branch: Option<Statement> = None;
+        if self.match_token(Else) {
+            else_branch = Some(self.statement());
+        }
+
+        Statement::If {
+            condition: Box::new(condition),
+            then_branch: Box::new(then_branch),
+            else_branch: Box::new(else_branch),
+        }
     }
 
     fn block_statement(&mut self) -> Vec<Statement> {
@@ -99,7 +197,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Expression {
-        let expr: Expression = self.equality();
+        let expr: Expression = self.or();
         if self.match_token(Equal) {
             let equals: Token = self.previous();
             let value: Expression = self.assignment();
@@ -112,6 +210,38 @@ impl Parser {
 
             panic!("Invalid assignment target.");
         }
+        expr
+    }
+
+    fn or(&mut self) -> Expression {
+        let mut expr: Expression = self.and();
+
+        while self.match_token(Or) {
+            let operator = self.previous();
+            let right = self.and();
+            expr = Expression::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            }
+        }
+
+        expr
+    }
+
+    fn and(&mut self) -> Expression {
+        let mut expr: Expression = self.equality();
+
+        while self.match_token(And) {
+            let operator: Token = self.previous();
+            let right: Expression = self.equality();
+            expr = Expression::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            }
+        }
+
         expr
     }
 

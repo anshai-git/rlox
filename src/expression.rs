@@ -19,6 +19,11 @@ pub enum Expression {
     Literal {
         value: Object,
     },
+    Logical {
+        left: Box<Expression>,
+        operator: Token,
+        right: Box<Expression>,
+    },
     Unary {
         operator: Token,
         right: Box<Self>,
@@ -35,6 +40,7 @@ pub trait ExpressionVisitor {
     fn visit_unary_expression(&mut self, expr: &Expression) -> Object;
     fn visit_variable_expression(&mut self, expr: &Expression) -> Object;
     fn visit_assign_expression(&mut self, expr: &Expression) -> Object;
+    fn visit_logical_expression(&mut self, expr: &Expression) -> Object;
 }
 
 impl Expression {
@@ -45,7 +51,8 @@ impl Expression {
             Expression::Unary { .. } => visitor.visit_unary_expression(self),
             Expression::Literal { .. } => visitor.visit_literal_expression(self),
             Expression::Variable { .. } => visitor.visit_variable_expression(self),
-            Expression::Assign { name, value } => visitor.visit_assign_expression(self),
+            Expression::Assign { .. } => visitor.visit_assign_expression(self),
+            Expression::Logical { .. } => visitor.visit_logical_expression(self),
         }
     }
 }
