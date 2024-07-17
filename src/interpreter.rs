@@ -25,7 +25,11 @@ impl Interpreter {
         }
     }
 
-    pub fn execute_block(&mut self, mut statements: &mut Vec<Statement>, environment: Environment) -> Environment {
+    pub fn execute_block(
+        &mut self,
+        mut statements: &mut Vec<Statement>,
+        environment: Environment,
+    ) -> Environment {
         let previous: Environment = self.environment.clone();
         self.environment = environment;
         for statement in statements.iter_mut() {
@@ -137,6 +141,20 @@ impl StatementVisitor for Interpreter {
 }
 
 impl ExpressionVisitor for Interpreter {
+    fn visit_call_expression(&mut self, expr: &Expression) -> Object {
+        if let Expression::Call {
+            callee,
+            paren,
+            arguments,
+        } = expr
+        {
+            let callee_object: Object = Interpreter::evaluate(callee, self);
+            let mut arguments: Vec<Object> = Vec::new();
+        } else {
+            panic!("Expected Expression::Call");
+        }
+    }
+
     fn visit_logical_expression(&mut self, expr: &Expression) -> Object {
         if let Expression::Logical {
             left,
@@ -164,7 +182,8 @@ impl ExpressionVisitor for Interpreter {
     fn visit_assign_expression(&mut self, expr: &Expression) -> Object {
         if let Expression::Assign { name, value } = expr {
             let value_expr_result: Object = Interpreter::evaluate(value, self);
-            self.environment.assign(name.clone(), value_expr_result.clone());
+            self.environment
+                .assign(name.clone(), value_expr_result.clone());
             return value_expr_result;
         } else {
             panic!("Expected Expression::Assign");

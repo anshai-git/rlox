@@ -13,6 +13,11 @@ pub enum Expression {
         right: Box<Self>,
         operator: Token,
     },
+    Call {
+        callee: Box<Self>,
+        paren: Token,
+        arguments: Vec<Self>,
+    },
     Grouping {
         expression: Box<Self>,
     },
@@ -41,6 +46,7 @@ pub trait ExpressionVisitor {
     fn visit_variable_expression(&mut self, expr: &Expression) -> Object;
     fn visit_assign_expression(&mut self, expr: &Expression) -> Object;
     fn visit_logical_expression(&mut self, expr: &Expression) -> Object;
+    fn visit_call_expression(&mut self, expre: &Expression) -> Object;
 }
 
 impl Expression {
@@ -53,6 +59,7 @@ impl Expression {
             Expression::Variable { .. } => visitor.visit_variable_expression(self),
             Expression::Assign { .. } => visitor.visit_assign_expression(self),
             Expression::Logical { .. } => visitor.visit_logical_expression(self),
+            Expression::Call { .. } => visitor.visit_call_expression(self),
         }
     }
 }

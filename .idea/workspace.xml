@@ -7,11 +7,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="40d5bb12-b55d-4ec1-b78a-51c594029ef7" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/environment.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/environment.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/interpreter.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/interpreter.rs" afterDir="false" />
-    </list>
+    <list default="true" id="40d5bb12-b55d-4ec1-b78a-51c594029ef7" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -128,7 +124,7 @@
       <workItem from="1716628225509" duration="368000" />
       <workItem from="1721157112857" duration="3919000" />
       <workItem from="1721192117660" duration="3039000" />
-      <workItem from="1721236730692" duration="3905000" />
+      <workItem from="1721236730692" duration="4037000" />
     </task>
     <servers />
   </component>
@@ -136,15 +132,6 @@
     <option name="version" value="3" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/interpreter.rs</url>
-          <line>131</line>
-          <option name="timeStamp" value="31" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
     <watches-manager>
       <configuration name="CargoCommandRunConfiguration">
         <watch expression="self-&gt;environment-&gt;values" />
