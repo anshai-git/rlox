@@ -149,7 +149,11 @@ impl ExpressionVisitor for Interpreter {
         } = expr
         {
             let callee_object: Object = Interpreter::evaluate(callee, self);
-            let mut arguments: Vec<Object> = Vec::new();
+            let mut args: Vec<Object> = Vec::new();
+            for argument in arguments {
+                args.push(Interpreter::evaluate(argument, self));
+            }
+            Object::Callable
         } else {
             panic!("Expected Expression::Call");
         }
