@@ -10,11 +10,7 @@
     <list default="true" id="40d5bb12-b55d-4ec1-b78a-51c594029ef7" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/environment.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/environment.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/expression.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/expression.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/interpreter.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/interpreter.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/rlox.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/rlox.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/statement.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/statement.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,6 +19,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/environment.rs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="rsrxm65e" />
@@ -37,7 +36,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Cargo.Run rlox.executor": "Debug",
+    "Cargo.Run rlox.executor": "Run",
     "Cargo.Test scanner::scanner_tests::test_scann_number.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.rust.reset.selective.auto.import": "true",
@@ -48,7 +47,7 @@
     "nodejs_package_manager_path": "npm",
     "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
     "org.rust.first.attach.projects": "true",
-    "settings.editor.selected.configurable": "language.rust.cargo.check"
+    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors.Color Scheme Font"
   }
 }]]></component>
   <component name="RunManager" selected="Cargo.Run rlox">
@@ -127,7 +126,9 @@
       <updated>1716306101417</updated>
       <workItem from="1716306102627" duration="248000" />
       <workItem from="1716628225509" duration="368000" />
-      <workItem from="1721157112857" duration="3780000" />
+      <workItem from="1721157112857" duration="3919000" />
+      <workItem from="1721192117660" duration="3039000" />
+      <workItem from="1721236730692" duration="3905000" />
     </task>
     <servers />
   </component>
@@ -138,24 +139,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/scanner.rs</url>
-          <line>134</line>
-          <option name="timeStamp" value="5" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/environment.rs</url>
-          <line>27</line>
-          <option name="timeStamp" value="17" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/interpreter.rs</url>
-          <line>94</line>
-          <option name="timeStamp" value="18" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/environment.rs</url>
-          <line>32</line>
-          <option name="timeStamp" value="19" />
+          <line>131</line>
+          <option name="timeStamp" value="31" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

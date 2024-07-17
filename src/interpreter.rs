@@ -25,13 +25,15 @@ impl Interpreter {
         }
     }
 
-    pub fn execute_block(&mut self, mut statements: &mut Vec<Statement>, environment: Environment) {
+    pub fn execute_block(&mut self, mut statements: &mut Vec<Statement>, environment: Environment) -> Environment {
         let previous: Environment = self.environment.clone();
         self.environment = environment;
         for statement in statements.iter_mut() {
             Interpreter::execute(statement, self);
         }
+        let source_env = self.environment.clone();
         self.environment = previous;
+        source_env
     }
 
     pub fn execute<T: StatementVisitor>(stmt: &mut Statement, visitor: &mut T) -> () {
@@ -63,13 +65,45 @@ impl Interpreter {
 }
 
 impl StatementVisitor for Interpreter {
-    fn visit_while_stmt(&mut self, stmt: &mut Statement) {
-        if let Statement::While { condition, body } = stmt {
-            while Interpreter::is_truthy(Interpreter::evaluate(condition, self)) {
-                Interpreter::execute(body, self);
-            }
+    fn visit_print_stmt(&mut self, stmt: &Statement) -> () {
+        if let Statement::Print { value } = stmt {
+            let value: Object = Interpreter::evaluate(value, self);
+            println!("{:?}", value);
         } else {
-            panic!("Expected Statement::While")
+            panic!("Expected Statement::Print")
+        }
+    }
+
+    fn visit_expression_stmt(&mut self, stmt: &Statement) -> () {
+        if let Statement::Expression { expression } = stmt {
+            Interpreter::evaluate(expression, self);
+        } else {
+            panic!("Expected Statement::Expression")
+        }
+    }
+
+    fn visit_var_stmt(&mut self, stmt: &Statement) {
+        if let Statement::Var { name, initializer } = stmt {
+            let value: Object = match initializer.as_ref() {
+                Some(ref expr) => Interpreter::evaluate(expr, self),
+                None => Object::Null,
+            };
+
+            self.environment.define(name.lexeme.clone(), value);
+        } else {
+            panic!("Expected Statement::Var")
+        }
+    }
+
+    fn visit_block_stmt(&mut self, stmt: &mut Statement) {
+        if let Statement::Block { ref mut statements } = stmt {
+            // As we clone the current environment into the function, we must give the updated version back as return value
+            self.environment = self.execute_block(
+                statements,
+                Environment::with_enclosing(self.environment.clone()),
+            );
+        } else {
+            panic!("Expected Statement::Block")
         }
     }
 
@@ -91,44 +125,13 @@ impl StatementVisitor for Interpreter {
         }
     }
 
-    fn visit_block_stmt(&mut self, stmt: &mut Statement) {
-        if let Statement::Block { ref mut statements } = stmt {
-            self.execute_block(
-                statements,
-                Environment::with_enclosing(self.environment.clone()),
-            );
+    fn visit_while_stmt(&mut self, stmt: &mut Statement) {
+        if let Statement::While { condition, body } = stmt {
+            while Interpreter::is_truthy(Interpreter::evaluate(condition, self)) {
+                Interpreter::execute(body, self);
+            }
         } else {
-            panic!("Expected Statement::Block")
-        }
-    }
-
-    fn visit_var_stmt(&mut self, stmt: &Statement) {
-        if let Statement::Var { name, initializer } = stmt {
-            let value: Object = match initializer.as_ref() {
-                Some(ref expr) => Interpreter::evaluate(expr, self),
-                None => Object::Null,
-            };
-
-            self.environment.define(name.lexeme.clone(), value);
-        } else {
-            panic!("Expected Statement::Var")
-        }
-    }
-
-    fn visit_print_stmt(&mut self, stmt: &Statement) -> () {
-        if let Statement::Print { value } = stmt {
-            let value: Object = Interpreter::evaluate(value, self);
-            println!("{:?}", value);
-        } else {
-            panic!("Expected Statement::Print")
-        }
-    }
-
-    fn visit_expression_stmt(&mut self, stmt: &Statement) -> () {
-        if let Statement::Expression { expression } = stmt {
-            Interpreter::evaluate(expression, self);
-        } else {
-            panic!("Expected Statement::Expression")
+            panic!("Expected Statement::While")
         }
     }
 }

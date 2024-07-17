@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use crate::{object::Object, token::Token};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Environment {
-    enclosing: Box<Option<Self>>,
+    pub enclosing: Box<Option<Self>>,
     values: HashMap<String, Object>,
 }
 
